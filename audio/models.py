@@ -8,7 +8,7 @@ class Project(BaseModel):
     project_title = models.CharField(max_length=100)
 
     class Meta:
-        db_name = "project"
+        db_table = "project"
 
 
 class Audio(BaseModel):
@@ -18,4 +18,4 @@ class Audio(BaseModel):
     speed = models.BooleanField(default=False)
 
     class Meta:
-        db_name = "audio"
+        db_table = "audio"
