@@ -8,7 +8,7 @@ project_service = ProjectService()
 
 
 class ProjectAPI(APIView):
-    def post(request):
+    def post(self, request):
         params = request.data
         serializer = ProjectCreateReq(data=params)
         serializer.is_valid()

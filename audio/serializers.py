@@ -1,7 +1,10 @@
 from typing import List
 import re
+import shutil
+import os
 
 from django.db.models import F
+from django.db import transaction
 from django.conf import settings
 from rest_framework import serializers
 from gtts.tts import gTTS
@@ -25,7 +28,7 @@ class ProjectCreateReq(serializers.Serializer):
     """
 
     index = serializers.IntegerField()
-    project_title = serializers.CharField(max_length=100)
+    title = serializers.CharField(max_length=100)
     index = serializers.IntegerField()
     text = serializers.CharField()
     speed = serializers.BooleanField(default=False)
@@ -59,6 +62,7 @@ class ProjectService:
     def create_audio_file(
         self,
         project_id: int,
+        path: str,
     ) -> List[tuple]:
         """
         전처리된 텍스트와 오디오 파일 저장 경로를 받아 오디오 파일을 만드는 함수
@@ -72,7 +76,12 @@ class ProjectService:
                 lang="ko",
                 slow=audio.speed,
             )
-            audio_info.save(f"{project_id}({audio.index}).mp3")
+            audio_info.save(f"{audio.index}.mp3")
+            if not os.path.exists(f".{settings.MEDIA_URL}{project_id}/"):
+                os.makedirs(f".{settings.MEDIA_URL}{project_id}/")
+            shutil.move(
+                f"{audio.index}.mp3", f".{settings.MEDIA_URL}{project_id}/{audio.index}.mp3"
+            )
             result_list.append((audio.id, audio.text))
         return result_list
 
@@ -86,28 +95,29 @@ class ProjectService:
         """
         텍스트 데이터를 받아 각 전처리 과정을 거쳐 프로젝트(오디오)를 만드는 함수
         """
-
-        created = Project.objects.create(
-            index=index,
-            title=title,
-        )
-
-        pre_texts = self.create_preprocessed_text(text=text)
-
-        index = 0
-        bulk_list = []
-        for pre_text in pre_texts[:-2]:
-            bulk_list.append(
-                Audio(
-                    project_id=created.id,
-                    index=index,
-                    text=pre_text,
-                    speed=speed,
-                )
+        with transaction.atomic():
+            created = Project.objects.create(
+                index=index,
+                title=title,
             )
-        Audio.objects.bulk_create(bulk_list)
 
-        audio = self.create_audio_file()
+            pre_texts = self.create_preprocessed_text(text=text)
+
+            audio_index = 0
+            bulk_list = []
+            for pre_text in pre_texts[:-1]:
+                bulk_list.append(
+                    Audio(
+                        project_id=created.id,
+                        index=audio_index,
+                        text=pre_text,
+                        speed=speed,
+                    )
+                )
+                audio_index += 1
+            Audio.objects.bulk_create(bulk_list)
+
+            audio = self.create_audio_file(project_id=created.id, path=pre_texts[-1])
 
         return audio
 
