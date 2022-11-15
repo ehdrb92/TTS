@@ -12,7 +12,7 @@ class Project(BaseModel):
 
 
 class Audio(BaseModel):
-    project_id = models.ForeignKey("Project", on_delete=models.CASCADE)
+    project = models.ForeignKey("Project", on_delete=models.CASCADE)
     index = models.PositiveIntegerField()
     text = models.TextField()
     speed = models.BooleanField(default=False)
