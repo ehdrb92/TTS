@@ -5,7 +5,7 @@ from core.models import BaseModel
 
 class Project(BaseModel):
     index = models.PositiveIntegerField()
-    project_title = models.CharField(max_length=100)
+    title = models.CharField(max_length=100)
 
     class Meta:
         db_table = "project"
