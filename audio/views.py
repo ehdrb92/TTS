@@ -15,8 +15,10 @@ class ProjectAPI(APIView):
         created = project_service.create_project(**serializer.data)
         return JsonResponse({"res": created, "status": status.HTTP_201_CREATED})
 
-    def delete(request):
-        pass
+    def delete(self, request):
+        params = request.data
+        deleted = project_service.delete_project(project_id=params["project_id"])
+        return JsonResponse({"res": deleted, "status": status.HTTP_200_OK})
 
 
 class AudioAPI(APIView):

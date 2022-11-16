@@ -123,11 +123,15 @@ class ProjectService:
 
     def delete_project(
         self,
-        title: str,
+        project_id: str,
     ) -> tuple:
-        deleted = Project.objects.get(title=title).delete()
-
-        return ProjectSerializer(data=deleted).data
+        with transaction.atomic():
+            deleted = Project.objects.get(id=project_id)
+            deleted.delete()
+            shutil.rmtree(f".{settings.MEDIA_URL}{project_id}")
+        serializer = ProjectSerializer(data=deleted)
+        serializer.is_valid()
+        return serializer.data
 
 
 class AudioService:
