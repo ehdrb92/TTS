@@ -117,9 +117,3 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
-
-# AWS S3 서비스 환경변수
-
-ACCESS_KEY_ID = os.environ.get("ACCESS_KEY_ID")
-ACCESS_SECRET_KEY = os.environ.get("ACCESS_SECRET_KEY")
-BUCKET_NAME = os.environ.get("BUCKET_NAME")

@@ -16,11 +16,136 @@ pip install -r requirements.txt
 
 ## Feature
 
-* 프로젝트(오디오) 생성: 일련의 텍스트를 받아 전처리하여 오디오 파일을 만들어 냅니다.
+<input type="checkbox" checked> 프로젝트 생성(해당 프로젝트 오디오 생성)  
+<input type="checkbox" checked> 텍스트 조회  
+<input type="checkbox" checked> 텍스트(오디오 파일) 수정  
+<input type="checkbox"> 오디오 파일 송신  
+<input type="checkbox" checked> 텍스트(오디오 파일) 생성/삭제  
+<input type="checkbox" checked> 프로젝트 삭제(해당 프로젝트 오디오 삭제)
+
+## API
+
+
+| Method |      URL      |  Description  |
+| :----: | :-----------: | :-----------: |
+|  POST  | /api/project/ | 프로젝트 생성 |
+| DELETE | /api/project/ | 프로젝트 삭제 |
+
+| Method |                   URL                   |       Description        |
+| :----: | :-------------------------------------: | :----------------------: |
+|  POST  |      /api/audio/{int:project_id}/       | 텍스트(오디오 파일) 생성 |
+|  GET   | /api/audio?project_id={int}&page={int}  |       텍스트 조회        |
+|  PUT   | /api/audio/{int:project_id}/{int:index} | 텍스트(오디오 파일) 수정 |
+| DELETE | /api/audio/{int:project_id}/{int:index} | 텍스트(오디오 파일) 삭제 |
+
+* 프로젝트 생성
+
+    + Body
+    ```
+    {
+        "index": index,
+        "title": "title",
+        "text": ["text"]
+    }
+    ```
+    + Response
+    ```
+    {
+        "status": 201
+    }
+    ```
+
+* 프로젝트 삭제
+
+    + Body
+    ```
+    {
+        "project_id": project_id
+    }
+    ```
+    + Response
+    ```
+    {
+        "status": 200
+    }
+    ```
+
+* 텍스트(오디오 파일) 생성
+
+    + Body
+    ```
+    {
+        "text": "text",
+        "speed": false,
+        "index": index
+    }
+    ```
+    + Response
+    ```
+    {
+        "status": 201
+    }
+    ```
+
 * 텍스트 조회
-    + 특정 프로젝트의 n번째 페이지를 조회할 수 있습니다.
-    + 한 페이지는 10문장으로 이루어져 있습니다.
-* 텍스트 수정: 특정 문장의 텍스트와 스피드를 수정할 수 있습니다.
-* 텍스트 생성 및 삭제: 프로젝트에 특정 문장을 삽입하거나 삭제할 수 있습니다.
-* 오디오 파일 전송: 생성된 오디오 파일을 전송할 수 있습니다.
-* 프로젝트 삭제: 생성된 프로젝트를 삭제할 수 있습니다.
+
+    + Response
+    ```
+    {
+        "res": [
+            {
+                "id": id,
+                "created_at": "2022-11-17T20:48:31.138507",
+                "updated_at": "2022-11-17T20:48:31.138587",
+                "index": 0,
+                "text": "text",
+                "speed": false,
+                "project": project_id
+            },
+            {
+                "id": id,
+                "created_at": "2022-11-17T20:48:31.138902",
+                "updated_at": "2022-11-17T20:48:31.138948",
+                "index": 1,
+                "text": "text",
+                "speed": false,
+                "project": project_id
+            },
+            {
+                "id": id,
+                "created_at": "2022-11-17T20:48:31.139096",
+                "updated_at": "2022-11-17T20:48:31.139139",
+                "index": 2,
+                "text": "text",
+                "speed": false,
+                "project": project_id
+            }
+        ],
+        "status": 200
+    }
+    ```
+
+* 텍스트(오디오 파일) 수정
+
+    + Body
+    ```
+    {
+        "text": "text(수정)",
+        "speed": false
+    }
+    ```
+    + Response
+    ```
+    {
+        "status": 200
+    }
+    ```
+
+* 텍스트(오디오 파일) 삭제
+
+    + Response
+    ```
+    {
+        "status": 200
+    }
+    ```
