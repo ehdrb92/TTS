@@ -170,7 +170,7 @@ class AudioRepo:
             )
         return True
 
-    def insert_project_text(
+    def insert_text(
         self,
         project_id: int,
         index: int,

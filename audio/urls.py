@@ -1,9 +1,12 @@
 from django.urls import path
 
-from .views import ProjectAPI, get_audio_list, update_text
+from .views import (
+    ProjectAPI,
+    AudioAPI,
+)
 
 urlpatterns = [
     path("project/", ProjectAPI.as_view()),
-    path("audio/", get_audio_list),
-    path("audio/<int:project_id>/", update_text),
+    path("audio/", AudioAPI.as_view()),
+    path("audio/<int:project_id>/", AudioAPI.as_view()),
 ]

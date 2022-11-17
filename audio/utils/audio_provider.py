@@ -70,7 +70,6 @@ class AudioFile:
 
         return True
 
-    # TODO
     def insert_project_audio_file(
         self,
         project_id: int,
@@ -85,7 +84,8 @@ class AudioFile:
         1. 생성될 오디오 파일의 인덱스와 이보다 큰 인덱스를 +1 처리(파일 이름 변경)
         2. 클라이언트가 원하는 위치의 인덱스에 오디오 파일 생성
         """
-        pass
+        for i in range(index, len):
+            pass
 
     # TODO
     def transmit_audio_file(
