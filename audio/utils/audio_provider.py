@@ -27,6 +27,7 @@ class AudioFile:
         3. 결과 리스트 응답
         """
         self.directory = f".{path}{project_id}/"
+        self.audio_file = f"{audio.index}.mp3"
         result_list = []
         audio_list = Audio.objects.filter(project_id=project_id).order_by("index")
 
@@ -36,10 +37,10 @@ class AudioFile:
                 lang="ko",
                 slow=audio.speed,
             )
-            audio_info.save(f"{audio.index}.mp3")
+            audio_info.save(self.audio_file)
             if not os.path.exists(self.directory):
                 os.makedirs(self.directory)
-            shutil.move(f"{audio.index}.mp3", f".{path}{project_id}/{audio.index}.mp3")
+            shutil.move(self.audio_file, f".{path}{project_id}/{audio.index}.mp3")
             result_list.append((audio.id, audio.text))
         return result_list
 
@@ -49,14 +50,15 @@ class AudioFile:
         text: str,
         speed: bool,
         index: int,
-    ) -> None:
+    ) -> bool:
         """
         해당하는 프로젝트와 오디오 파일을 찾아 새로운 수정된 오디오 파일로 고치는 작업을 수행
 
         1. 기존의 인덱스에 해당하는 오디오 파일을 삭제
         2. 해당 인덱스에 해당하는 새로운 오디오 파일 생성
         """
-        os.remove(f".{settings.MEDIA_URL}{project_id}/{index}")
+        self.directory = f".{settings.MEDIA_URL}{project_id}/{index}.mp3"
+        os.remove(self.directory)
 
         audio_info = gTTS(
             text=text,
@@ -64,7 +66,9 @@ class AudioFile:
             slow=speed,
         )
         audio_info.save(f"{index}.mp3")
-        shutil.move(f"{index}.mp3", f".{settings.MEDIA_URL}{project_id}/{index}.mp3")
+        shutil.move(f"{index}.mp3", self.directory)
+
+        return True
 
     # TODO
     def insert_project_audio_file(

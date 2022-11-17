@@ -32,9 +32,9 @@ def get_audio_list(request):
 
 
 @api_view(["PUT"])
-def update_text(request):
+def update_text(request, project_id):
     params = request.data
     serizlizer = AudioCreateUpdateReq(data=params)
     serizlizer.is_valid()
-    audio_repository.update_project_text(**serizlizer.data)
+    audio_repository.update_project_text(project_id=project_id, **serizlizer.data)
     return JsonResponse({"status": status.HTTP_200_OK})

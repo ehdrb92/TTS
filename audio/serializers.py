@@ -40,7 +40,6 @@ class AudioCreateUpdateReq(serializers.Serializer):
     오디오 생성 및 수정 요청시 데이터 유효성 검증과정 수행
     """
 
-    project_id = serializers.IntegerField()
     text = serializers.CharField()
     speed = serializers.BooleanField()
     index = serializers.IntegerField()
@@ -134,7 +133,7 @@ class AudioRepo:
         page: int,
     ) -> list:
         """
-        프로젝트(오디오)의 페이지에 해당하는 텍스트를 조회
+        프로젝트의 페이지에 해당하는 텍스트를 조회
 
         1. 불러올 오디오 목록의 범위를 생성
         2. 범위에 해당하는 오디오 데이터를 index순으로 정렬하여 쿼리셋 형태로 변수에 저장
@@ -152,7 +151,7 @@ class AudioRepo:
         speed: bool = False,
     ) -> bool:
         """
-        프로젝트(오디오)의 텍스트를 수정
+        프로젝트의 텍스트를 수정
 
         1. 프로젝트에서 클라이언트가 요청하는 index의 데이터베이스 수정
         2. 생성된 오디오 파일 중 수정된 데이터에 해당하는 오디오 파일 수정
