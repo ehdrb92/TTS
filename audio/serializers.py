@@ -208,10 +208,25 @@ class AudioRepo:
     ) -> bool:
         """
         프로젝트의 텍스트를 삭제
+
+        1. 삭제되는 텍스트 데이터 삭제
+        2. 텍스트가 삭제될 경우 index값에 변화를 주어야할 데이터들의 index값 수정
+        3. 삭제된 텍스트 데이터에 대한 오디오 파일 삭제
         """
-        project_audios = Audio.objects.filter(project_id=project_id, index__gt=index)
-        if project_audios:
-            project_audios.index = F("index") - 1
-            project_audios.save
-        Audio.objects.get(project_id=project_id, index=index).delete()
+        with transaction.atomic():
+            Audio.objects.get(
+                project_id=project_id,
+                index=index,
+            ).delete()
+
+            project_audios = Audio.objects.filter(project_id=project_id, index__gt=index)
+            if project_audios:
+                project_audios.update(index=F("index") - 1)
+
+            len = Audio.objects.all().count()
+            self.audio_service.delete_project_audio_file(
+                project_id=project_id,
+                index=index,
+                len=len,
+            )
         return True

@@ -98,11 +98,24 @@ class AudioFile:
 
         return True
 
-    # TODO
-    def transmit_audio_file(
+    def delete_project_audio_file(
         self,
-    ):
+        project_id: int,
+        index: int,
+        len: int,
+    ) -> bool:
         """
-        생성된 오디오 파일을 전송
+        프로젝트의 텍스트 삭제 시 오디오 파일을 삭제
+
+        1. 클라이언트가 요청한 인덱스에 해당하는 오디오 삭제
+        2. 삭제된 오디오보다 큰 인덱스를 가진 파일들의 인덱스를 -1 처리(파일 이름 변경)
         """
-        pass
+        os.remove(f".{settings.MEDIA_URL}{project_id}/{index}.mp3")
+
+        for i in range(index + 1, len + 1):
+            os.rename(
+                f".{settings.MEDIA_URL}{project_id}/{i}.mp3",
+                f".{settings.MEDIA_URL}{project_id}/{i-1}.mp3",
+            )
+
+        return True

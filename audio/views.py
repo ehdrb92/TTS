@@ -43,3 +43,7 @@ class AudioAPI(APIView):
         serizlizer.is_valid()
         audio_repository.update_project_text(project_id=project_id, **serizlizer.data)
         return JsonResponse({"status": status.HTTP_200_OK})
+
+    def delete(self, request, project_id, index):
+        audio_repository.delete_project_text(project_id=project_id, index=index)
+        return JsonResponse({"status": status.HTTP_200_OK})
