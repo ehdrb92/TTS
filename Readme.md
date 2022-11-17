@@ -16,12 +16,12 @@ pip install -r requirements.txt
 
 ## Feature
 
-<input type="checkbox" checked> 프로젝트 생성(해당 프로젝트 오디오 생성)  
-<input type="checkbox" checked> 텍스트 조회  
-<input type="checkbox" checked> 텍스트(오디오 파일) 수정  
-<input type="checkbox"> 오디오 파일 송신  
-<input type="checkbox" checked> 텍스트(오디오 파일) 생성/삭제  
-<input type="checkbox" checked> 프로젝트 삭제(해당 프로젝트 오디오 삭제)
+- [x] 프로젝트 생성(해당 프로젝트 오디오 생성)  
+- [x] 텍스트 조회  
+- [x] 텍스트(오디오 파일) 수정  
+- [ ] 오디오 파일 송신  
+- [x] 텍스트(오디오 파일) 생성/삭제  
+- [x] 프로젝트 삭제(해당 프로젝트 오디오 삭제)
 
 ## API
 
