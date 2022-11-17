@@ -1,7 +1,6 @@
 from django.http import JsonResponse
 from rest_framework import status
 from rest_framework.views import APIView
-from rest_framework.decorators import api_view
 
 from .serializers import ProjectCreateReq, AudioCreateUpdateReq, ProjectRepo, AudioRepo
 
@@ -37,11 +36,11 @@ class AudioAPI(APIView):
         data = audio_repository.get_project_text(project_id=project_id, page=page)
         return JsonResponse({"res": data, "status": status.HTTP_200_OK})
 
-    def put(self, request, project_id):
+    def put(self, request, project_id, index):
         params = request.data
         serizlizer = AudioCreateUpdateReq(data=params)
         serizlizer.is_valid()
-        audio_repository.update_project_text(project_id=project_id, **serizlizer.data)
+        audio_repository.update_project_text(project_id=project_id, index=index, **serizlizer.data)
         return JsonResponse({"status": status.HTTP_200_OK})
 
     def delete(self, request, project_id, index):
