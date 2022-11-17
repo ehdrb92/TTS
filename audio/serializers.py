@@ -187,8 +187,7 @@ class AudioRepo:
         with transaction.atomic():
             project_audios = Audio.objects.filter(project_id=project_id, index__gte=index)
             if project_audios:
-                project_audios.index = F("index") + 1
-                project_audios.save
+                project_audios.update(index=F("index") + 1)
 
             Audio.objects.create(project_id=project_id, index=index, text=text, speed=speed)
 

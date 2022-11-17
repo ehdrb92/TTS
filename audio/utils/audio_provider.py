@@ -27,7 +27,6 @@ class AudioFile:
         3. 결과 리스트 응답
         """
         self.directory = f".{path}{project_id}/"
-        self.audio_file = f"{audio.index}.mp3"
         result_list = []
         audio_list = Audio.objects.filter(project_id=project_id).order_by("index")
 
@@ -37,10 +36,10 @@ class AudioFile:
                 lang="ko",
                 slow=audio.speed,
             )
-            audio_info.save(self.audio_file)
+            audio_info.save(f"{audio.index}.mp3")
             if not os.path.exists(self.directory):
                 os.makedirs(self.directory)
-            shutil.move(self.audio_file, f".{path}{project_id}/{audio.index}.mp3")
+            shutil.move(f"{audio.index}.mp3", f".{path}{project_id}/{audio.index}.mp3")
             result_list.append((audio.id, audio.text))
         return result_list
 
@@ -84,8 +83,20 @@ class AudioFile:
         1. 생성될 오디오 파일의 인덱스와 이보다 큰 인덱스를 +1 처리(파일 이름 변경)
         2. 클라이언트가 원하는 위치의 인덱스에 오디오 파일 생성
         """
-        for i in range(index, len):
-            pass
+        for i in range(len - 2, index - 1, -1):
+            os.rename(
+                f".{settings.MEDIA_URL}{project_id}/{i}.mp3",
+                f".{settings.MEDIA_URL}{project_id}/{i+1}.mp3",
+            )
+
+        audio_info = gTTS(
+            text=text,
+            lang="ko",
+            slow=speed,
+        )
+        audio_info.save(f".{settings.MEDIA_URL}{project_id}/{index}.mp3")
+
+        return True
 
     # TODO
     def transmit_audio_file(
