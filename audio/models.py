@@ -5,14 +5,14 @@ from core.models import BaseModel
 
 class Project(BaseModel):
     index = models.PositiveIntegerField()
-    project_title = models.CharField(max_length=100)
+    title = models.CharField(max_length=100)
 
     class Meta:
         db_table = "project"
 
 
 class Audio(BaseModel):
-    project_id = models.ForeignKey("Project", on_delete=models.CASCADE)
+    project = models.ForeignKey("Project", on_delete=models.CASCADE)
     index = models.PositiveIntegerField()
     text = models.TextField()
     speed = models.BooleanField(default=False)
