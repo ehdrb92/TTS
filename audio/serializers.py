@@ -1,30 +1,31 @@
 from typing import List
-import re
 import shutil
-import os
 
 from django.db.models import F
 from django.db import transaction
 from django.conf import settings
 from rest_framework import serializers
-from gtts.tts import gTTS
 
 from .models import Project, Audio
+from .utils.text_provider import TextPreprocess
+from .utils.audio_provider import AudioFile
 
 
 class ProjectSerializer(serializers.ModelSerializer):
-    model = Project
-    fields = "__all__"
+    class Meta:
+        model = Project
+        fields = "__all__"
 
 
 class AudioSerializer(serializers.ModelSerializer):
-    model = Audio
-    fields = "__all__"
+    class Meta:
+        model = Audio
+        fields = "__all__"
 
 
 class ProjectCreateReq(serializers.Serializer):
     """
-    프로젝트 생성 요청시 데이터의 유효성 검증을 위한 직렬화
+    프로젝트 생성 요청시 데이터의 유효성 검증과정 수행
     """
 
     index = serializers.IntegerField()
@@ -34,56 +35,25 @@ class ProjectCreateReq(serializers.Serializer):
     speed = serializers.BooleanField(default=False)
 
 
-class ProjectService:
+class AudioCreateUpdateReq(serializers.Serializer):
+    """
+    오디오 생성 및 수정 요청시 데이터 유효성 검증과정 수행
+    """
+
+    project_id = serializers.IntegerField()
+    text = serializers.CharField()
+    speed = serializers.BooleanField()
+    index = serializers.IntegerField()
+
+
+class ProjectRepo:
     """
     프로젝트(오디오) 생성 및 삭제 기능 클래스
     """
 
     def __init__(self) -> None:
-        pass
-
-    def create_preprocessed_text(
-        self,
-        text: List[str],
-    ) -> List[list]:
-        """
-        받은 텍스트 데이터를 전처리 작업하는 함수
-
-        문자열 1개를 담은 리스트를 매개변수로 받으면 해당 문자열을 '.!?'를 기준으로 문장을 나눕니다.
-        """
-        path = settings.MEDIA_URL
-        pattern = r"([A-Za-z0-9가-힣][^\.!?]*[\.!?])"
-        re_compile = re.compile(pattern)
-        res = re_compile.findall(text[0])
-        res.append(path)
-
-        return res
-
-    def create_audio_file(
-        self,
-        project_id: int,
-        path: str,
-    ) -> List[tuple]:
-        """
-        전처리된 텍스트와 오디오 파일 저장 경로를 받아 오디오 파일을 만드는 함수
-        """
-        result_list = []
-        audio_list = Audio.objects.filter(project_id=project_id).order_by("index")
-
-        for audio in audio_list:
-            audio_info = gTTS(
-                text=audio.text,
-                lang="ko",
-                slow=audio.speed,
-            )
-            audio_info.save(f"{audio.index}.mp3")
-            if not os.path.exists(f".{settings.MEDIA_URL}{project_id}/"):
-                os.makedirs(f".{settings.MEDIA_URL}{project_id}/")
-            shutil.move(
-                f"{audio.index}.mp3", f".{settings.MEDIA_URL}{project_id}/{audio.index}.mp3"
-            )
-            result_list.append((audio.id, audio.text))
-        return result_list
+        self.text_service = TextPreprocess()
+        self.audio_service = AudioFile()
 
     def create_project(
         self,
@@ -91,9 +61,14 @@ class ProjectService:
         title: str,
         text: List[str],
         speed: bool = False,
-    ) -> None:
+    ) -> bool:
         """
-        텍스트 데이터를 받아 각 전처리 과정을 거쳐 프로젝트(오디오)를 만드는 함수
+        텍스트 데이터를 받아 각 전처리 과정을 거쳐 프로젝트를 생성
+
+        1. 데이터베이스에 프로젝트 데이터 생성
+        2. 입력받은 텍스트를 전처리과정 수행
+        3. 전처리된 텍스트를 문장 단위로 데이터베이스에 오디오 데이터 생성
+        4. 생성된 오디오 데이터에 대한 오디오 파일을 생성
         """
         with transaction.atomic():
             created = Project.objects.create(
@@ -101,7 +76,9 @@ class ProjectService:
                 title=title,
             )
 
-            pre_texts = self.create_preprocessed_text(text=text)
+            pre_texts = self.text_service.create_preprocessed_text(
+                text=text,
+            )
 
             audio_index = 0
             bulk_list = []
@@ -117,42 +94,55 @@ class ProjectService:
                 audio_index += 1
             Audio.objects.bulk_create(bulk_list)
 
-            audio = self.create_audio_file(project_id=created.id, path=pre_texts[-1])
-
-        return audio
+            audio_list = Audio.objects.filter(project_id=created.id).order_by("index")
+            self.audio_service.create_audio_file(
+                project_id=created.id,
+                path=pre_texts[-1],
+                audio_list=audio_list,
+            )
+        return True
 
     def delete_project(
         self,
         project_id: str,
-    ) -> tuple:
+    ) -> bool:
+        """
+        프로젝트 삭제
+
+        1. 데이터베이스에 프로젝트 데이터 삭제(해당 프로젝트를 참조하는 오디오 데이터가 함께 삭제)
+        2. 프로젝트에 해당하는 오디오 파일 삭제
+        """
         with transaction.atomic():
             deleted = Project.objects.get(id=project_id)
             deleted.delete()
             shutil.rmtree(f".{settings.MEDIA_URL}{project_id}")
-        serializer = ProjectSerializer(data=deleted)
-        serializer.is_valid()
-        return serializer.data
+
+        return True
 
 
-class AudioService:
+class AudioRepo:
     """
     프로젝트 텍스트의 CRUD 기능 클래스
     """
 
     def __init__(self) -> None:
-        pass
+        self.audio_service = AudioFile()
 
     def get_project_text(
         self,
         project_id: int,
         page: int,
     ) -> list:
-        audios = Audio.objects.filter(project_id=project_id).order_by("index")
+        """
+        프로젝트(오디오)의 페이지에 해당하는 텍스트를 조회
+
+        1. 불러올 오디오 목록의 범위를 생성
+        2. 범위에 해당하는 오디오 데이터를 index순으로 정렬하여 쿼리셋 형태로 변수에 저장
+        3. 해당 변수를 직렬화하여 응답
+        """
         offset = (page - 1) * 10
-
-        result = [audio for audio in audios[offset : offset + 10]]
-
-        return AudioSerializer(data=result).data
+        audios = Audio.objects.filter(project_id=project_id).order_by("index")[offset : offset + 10]
+        return AudioSerializer(audios, many=True).data
 
     def update_project_text(
         self,
@@ -160,19 +150,26 @@ class AudioService:
         index: int,
         text: str,
         speed: bool = False,
-    ) -> dict:
-        updated = Audio.objects.filter(project_id=project_id, index=index).update(
-            index=index,
-            text=text,
-            speed=speed,
-        )
+    ) -> bool:
+        """
+        프로젝트(오디오)의 텍스트를 수정
 
-        return AudioSerializer(data=updated).data
-
-    def transmit_audio_file(
-        self,
-    ):
-        pass
+        1. 프로젝트에서 클라이언트가 요청하는 index의 데이터베이스 수정
+        2. 생성된 오디오 파일 중 수정된 데이터에 해당하는 오디오 파일 수정
+        """
+        with transaction.atomic():
+            Audio.objects.filter(project_id=project_id, index=index).update(
+                index=index,
+                text=text,
+                speed=speed,
+            )
+            self.audio_service.update_audio_file_text(
+                project_id=project_id,
+                text=text,
+                speed=speed,
+                index=index,
+            )
+        return True
 
     def insert_project_text(
         self,
@@ -180,22 +177,43 @@ class AudioService:
         index: int,
         text: str,
         speed: bool = False,
-    ) -> dict:
-        project_audios = Audio.objects.filter(project_id=project_id, index__gte=index)
-        if project_audios:
-            project_audios.index = F("index") + 1
-            project_audios.save
-        Audio.objects.create(project_id=project_id, index=index, text=text, speed=speed)
-        return AudioSerializer(data=Audio.objects.all()).data
+    ) -> bool:
+        """
+        프로젝트에 텍스트 추가
+
+        1. 텍스트가 삽입될 경우 index값에 변화를 주어야할 데이터들의 index값 수정
+        2. 삽입되는 텍스트 데이터 추가
+        3. 삽입된 텍스트 데이터에 대한 오디오 파일 추가
+        """
+        with transaction.atomic():
+            project_audios = Audio.objects.filter(project_id=project_id, index__gte=index)
+            if project_audios:
+                project_audios.index = F("index") + 1
+                project_audios.save
+
+            Audio.objects.create(project_id=project_id, index=index, text=text, speed=speed)
+
+            len = Audio.objects.all().count()
+            self.audio_service.insert_project_audio_file(
+                project_id=project_id,
+                index=index,
+                text=text,
+                speed=speed,
+                len=len,
+            )
+        return True
 
     def delete_project_text(
         self,
         project_id: int,
         index: int,
-    ) -> dict:
+    ) -> bool:
+        """
+        프로젝트의 텍스트를 삭제
+        """
         project_audios = Audio.objects.filter(project_id=project_id, index__gt=index)
         if project_audios:
             project_audios.index = F("index") - 1
             project_audios.save
         Audio.objects.get(project_id=project_id, index=index).delete()
-        return AudioSerializer(data=Audio.objects.all()).data
+        return True

@@ -1,10 +1,12 @@
 from django.http import JsonResponse
 from rest_framework import status
 from rest_framework.views import APIView
+from rest_framework.decorators import api_view
 
-from .serializers import ProjectCreateReq, ProjectService
+from .serializers import ProjectCreateReq, AudioCreateUpdateReq, ProjectRepo, AudioRepo
 
-project_service = ProjectService()
+project_repository = ProjectRepo()
+audio_repository = AudioRepo()
 
 
 class ProjectAPI(APIView):
@@ -12,24 +14,27 @@ class ProjectAPI(APIView):
         params = request.data
         serializer = ProjectCreateReq(data=params)
         serializer.is_valid()
-        created = project_service.create_project(**serializer.data)
-        return JsonResponse({"res": created, "status": status.HTTP_201_CREATED})
+        project_repository.create_project(**serializer.data)
+        return JsonResponse({"status": status.HTTP_201_CREATED})
 
     def delete(self, request):
         params = request.data
-        deleted = project_service.delete_project(project_id=params["project_id"])
-        return JsonResponse({"res": deleted, "status": status.HTTP_200_OK})
+        project_repository.delete_project(project_id=params["project_id"])
+        return JsonResponse({"status": status.HTTP_200_OK})
 
 
-class AudioAPI(APIView):
-    def post(request):
-        pass
+@api_view(["GET"])
+def get_audio_list(request):
+    project_id = int(request.GET.get("project_id"))
+    page = int(request.GET.get("page", 1))
+    data = audio_repository.get_project_text(project_id=project_id, page=page)
+    return JsonResponse({"res": data, "status": status.HTTP_200_OK})
 
-    def get(request):
-        pass
 
-    def put(request):
-        pass
-
-    def delete(request):
-        pass
+@api_view(["PUT"])
+def update_text(request):
+    params = request.data
+    serizlizer = AudioCreateUpdateReq(data=params)
+    serizlizer.is_valid()
+    audio_repository.update_project_text(**serizlizer.data)
+    return JsonResponse({"status": status.HTTP_200_OK})
